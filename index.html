@@ -53,6 +53,20 @@
                 height: 400px;
             }
         }
+        .calendar-day.has-log {
+            position: relative;
+        }
+        .calendar-day.has-log::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #8F9D71;
+        }
         [x-cloak] { display: none !important; }
     </style>
 </head>
@@ -69,6 +83,7 @@
                         <a href="#home" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'home' }">Home</a>
                         <a href="#schedule" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'schedule' }">Schedule</a>
                         <a href="#strength" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'strength' }">Strength</a>
+                        <a href="#log" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'log' }">Workout Log</a>
                         <a href="#cardio" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'cardio' }">Cardio & Skills</a>
                         <a href="#recovery" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'recovery' }">Recovery</a>
                         <a href="#nutrition" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'nutrition' }">Nutrition</a>
@@ -91,6 +106,7 @@
                     <a href="#home" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Home</a>
                     <a href="#schedule" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Schedule</a>
                     <a href="#strength" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Strength</a>
+                    <a href="#log" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Workout Log</a>
                     <a href="#cardio" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Cardio & Skills</a>
                     <a href="#recovery" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Recovery</a>
                     <a href="#nutrition" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Nutrition</a>
@@ -231,6 +247,60 @@
                             </div>
                         </div>
                     </template>
+                </div>
+            </div>
+        </section>
+
+        <section id="log" class="pt-24 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Workout Log</h2>
+                <p class="mt-2 text-lg text-gray-600">Track your progress and stay consistent. Your data is saved in your browser.</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4" x-text="`Log for Today: ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`"></h3>
+                    <div id="daily-log-container" class="space-y-4" @change="saveLog()">
+                        <template x-if="getTodaysActivitiesForLog().length === 0">
+                            <p class="text-gray-500">Today is a rest day. No activities to log.</p>
+                        </template>
+                        <template x-for="(activity, index) in getTodaysActivitiesForLog()" :key="index">
+                            <div class="p-3 bg-gray-50 rounded-md">
+                                <div class="flex items-center justify-between">
+                                    <label :for="`activity-${index}`" class="flex items-center text-gray-800 font-medium cursor-pointer">
+                                        <input type="checkbox" :id="`activity-${index}`" :name="activity.name" class="h-4 w-4 rounded border-gray-300 text-accent focus:ring-accent">
+                                        <span class="ml-3" x-text="activity.name"></span>
+                                    </label>
+                                </div>
+                                <div x-show="activity.type === 'run' || activity.type === 'lift'" class="mt-2 pl-7">
+                                    <input type="text" :name="`${activity.name}-details`" class="w-full text-sm p-2 border border-gray-300 rounded-md" :placeholder="activity.type === 'run' ? 'Enter miles, e.g., 2.5' : 'Enter sets, e.g., 135x5, 135x5'">
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center justify-between mb-4">
+                        <button @click="prevMonth()" class="p-2 rounded-md hover:bg-gray-100">&lt;</button>
+                        <h3 class="text-xl font-semibold text-gray-900" x-text="`${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`"></h3>
+                        <button @click="nextMonth()" class="p-2 rounded-md hover:bg-gray-100">&gt;</button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 mb-2">
+                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+                        <template x-for="day in calendarDays" :key="day.dateStr">
+                            <div @click="viewLogForDate(day.dateStr)"
+                                 class="calendar-day h-12 flex items-center justify-center rounded-md border"
+                                 :class="{
+                                     'bg-gray-50 text-gray-400': !day.isCurrentMonth,
+                                     'bg-accent text-white': day.isToday,
+                                     'cursor-pointer hover:bg-gray-100': day.isCurrentMonth && !day.isToday,
+                                     'has-log': day.hasLog
+                                 }">
+                                <span x-text="day.day"></span>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
         </section>
@@ -397,12 +467,167 @@
                 modalOpen: false,
                 modalTitle: '',
                 modalContent: '',
+                workoutLog: {},
+                currentDate: new Date(),
+                monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+                calendarDays: [],
+
+                init() {
+                    this.loadLog();
+                    this.generateCalendar();
+                    this.populateDailyLog();
+                    this.initChart();
+                    
+                    const sections = document.querySelectorAll('main section');
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                this.activeSection = entry.target.id;
+                            }
+                        });
+                    }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+
+                    sections.forEach(section => {
+                        observer.observe(section);
+                    });
+                },
+
+                getDateString(date) {
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                },
+
+                loadLog() {
+                    const savedLog = localStorage.getItem('workoutLog');
+                    this.workoutLog = savedLog ? JSON.parse(savedLog) : {};
+                },
+
+                saveLog() {
+                    const todayStr = this.getDateString(new Date());
+                    const container = document.getElementById('daily-log-container');
+                    const inputs = container.querySelectorAll('input');
+                    let dailyLogData = [];
+
+                    this.getTodaysActivitiesForLog().forEach((activity, index) => {
+                        const checkbox = container.querySelector(`#activity-${index}`);
+                        const detailsInput = container.querySelector(`input[name="${activity.name}-details"]`);
+                        
+                        let logEntry = {
+                            name: activity.name,
+                            completed: checkbox.checked,
+                            details: detailsInput ? detailsInput.value : ''
+                        };
+                        dailyLogData.push(logEntry);
+                    });
+
+                    this.workoutLog[todayStr] = dailyLogData;
+                    localStorage.setItem('workoutLog', JSON.stringify(this.workoutLog));
+                    this.generateCalendar(); // Refresh calendar to show today's log
+                },
+
+                getTodaysActivitiesForLog() {
+                    const dayOfWeek = new Date().getDay(); // Sunday = 0, Monday = 1...
+                    let activities = [];
+                    // Monday (day 1) -> Run 2, Climb 1, Yin Yoga
+                    if (dayOfWeek === 1) {
+                        activities.push({ name: 'Running Session 2', type: 'run' });
+                        activities.push({ name: 'Climbing Session 1', type: 'climb' });
+                        activities.push({ name: 'Yin Yoga', type: 'skill' });
+                    }
+                    // Tuesday (day 2) -> Strength 2, Skate Lesson
+                    else if (dayOfWeek === 2) {
+                        this.strengthDayB.forEach(ex => activities.push({ name: ex.name, type: 'lift' }));
+                        activities.push({ name: 'Skating Lesson', type: 'skill' });
+                    }
+                    // Wednesday (day 3) -> Run 1, Ballet
+                    else if (dayOfWeek === 3) {
+                        activities.push({ name: 'Running Session 1', type: 'run' });
+                        activities.push({ name: 'Ballet Class', type: 'skill' });
+                    }
+                    // Thursday (day 4) -> Pilates, Climb 2
+                    else if (dayOfWeek === 4) {
+                         activities.push({ name: 'Pilates', type: 'skill' });
+                         activities.push({ name: 'Climbing Session 2', type: 'climb' });
+                    }
+                    // Friday (day 5) -> Strength 1, Open Skate
+                    else if (dayOfWeek === 5) {
+                        this.strengthDayA.forEach(ex => activities.push({ name: ex.name, type: 'lift' }));
+                        activities.push({ name: 'Open Skate', type: 'skill' });
+                    }
+                    return activities;
+                },
+
+                populateDailyLog() {
+                    const todayStr = this.getDateString(new Date());
+                    const todaysLog = this.workoutLog[todayStr];
+                    if (todaysLog) {
+                        this.$nextTick(() => {
+                             const container = document.getElementById('daily-log-container');
+                             todaysLog.forEach((logEntry, index) => {
+                                const checkbox = container.querySelector(`#activity-${index}`);
+                                const detailsInput = container.querySelector(`input[name="${logEntry.name}-details"]`);
+                                if (checkbox) checkbox.checked = logEntry.completed;
+                                if (detailsInput) detailsInput.value = logEntry.details;
+                            });
+                        });
+                    }
+                },
+
+                generateCalendar() {
+                    this.calendarDays = [];
+                    const year = this.currentDate.getFullYear();
+                    const month = this.currentDate.getMonth();
+                    const firstDayOfMonth = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const todayStr = this.getDateString(new Date());
+
+                    for (let i = 0; i < firstDayOfMonth; i++) {
+                        this.calendarDays.push({ day: '', isCurrentMonth: false, dateStr: null });
+                    }
+
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const date = new Date(year, month, i);
+                        const dateStr = this.getDateString(date);
+                        this.calendarDays.push({
+                            day: i,
+                            isCurrentMonth: true,
+                            isToday: dateStr === todayStr,
+                            hasLog: !!this.workoutLog[dateStr],
+                            dateStr: dateStr
+                        });
+                    }
+                },
+
+                prevMonth() {
+                    this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+                    this.generateCalendar();
+                },
+
+                nextMonth() {
+                    this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+                    this.generateCalendar();
+                },
+
+                viewLogForDate(dateStr) {
+                    if (!dateStr || !this.workoutLog[dateStr]) return;
+                    
+                    const logData = this.workoutLog[dateStr];
+                    const date = new Date(dateStr);
+                    const formattedDate = date.toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric' });
+                    
+                    let content = '<ul>';
+                    logData.forEach(item => {
+                        content += `<li class="flex items-start"><span class="mr-2">${item.completed ? '✅' : '❌'}</span><div><strong>${item.name}</strong>${item.details ? `<p class="text-sm text-gray-500">${item.details}</p>` : ''}</div></li>`;
+                    });
+                    content += '</ul>';
+
+                    this.openModal(`Log for ${formattedDate}`, content);
+                },
 
                 schedule: [
-                    { day: 'Monday', summary: ['Run 2 (Short)', 'Climb 1'], details: '<ul><li><b>Morning:</b> Optional walk. Shorter, easy effort running session (e.g., 20-30 min).</li><li><b>Evening:</b> Rock Climbing Session 1. Focus on technique and endurance.</li><li><b>Recovery:</b> Dynamic warm-ups before each session. Static stretching after each, focusing on legs post-run and upper body/forearms post-climb. Include Shoulder Health release work.</li></ul>' },
+                    { day: 'Monday', summary: ['Run 2 (Short)', 'Climb 1', 'Yin Yoga'], details: '<ul><li><b>Morning:</b> Optional walk. Shorter, easy effort running session.</li><li><b>Evening:</b> Rock Climbing Session 1, followed by Yin Yoga as a long cool-down.</li><li><b>Recovery:</b> Dynamic warm-ups before run & climb. Post-climb yoga serves as recovery, but also add specific shoulder health release work.</li></ul>' },
                     { day: 'Tuesday', summary: ['Strength 2', 'Skate Lesson'], details: '<ul><li><b>Morning:</b> Optional walk. Full Body Strength B workout (upper body & core focus). Warm up with shoulder activation drills.</li><li><b>Evening:</b> Figure Skating Lesson (1hr). Precede with off-ice dynamic warm-up.</li><li><b>Recovery:</b> Thorough static stretch and/or foam roll after strength session. Light cool-down after skating.</li></ul>' },
-                    { day: 'Wednesday', summary: ['Run 1 (Long)', 'Pilates'], details: '<ul><li><b>Morning:</b> Optional walk.</li><li><b>Evening:</b> Longer running session, followed by Pilates. The run builds endurance; Pilates will focus on core, stability, and active recovery.</li><li><b>Recovery:</b> Dynamic warm-up before run. Use Pilates as a structured cool-down, followed by targeted static stretches for hips and hamstrings.</li></ul>' },
-                    { day: 'Thursday', summary: ['Active Recovery', 'Climb 2'], details: '<ul><li><b>Morning:</b> Active Recovery. Low-impact cross-training like swimming, easy cycling, or a long walk.</li><li><b>Evening:</b> Rock Climbing Session 2.</li><li><b>Recovery:</b> Focus on mobility during active recovery. Post-climb static stretching for upper body. Include Shoulder Health release work.</li></ul>' },
+                    { day: 'Wednesday', summary: ['Run 1 (Long)', 'Ballet Class'], details: '<ul><li><b>Morning:</b> Optional walk. Longer running session.</li><li><b>Evening:</b> Ballet Class (6:45 PM).</li><li><b>Recovery:</b> Dynamic warm-up before run. Thorough post-run stretch. Ballet will provide mobility work.</li></ul>' },
+                    { day: 'Thursday', summary: ['Pilates', 'Climb 2'], details: '<ul><li><b>Morning:</b> Pilates session, focusing on core and mobility.</li><li><b>Evening:</b> Rock Climbing Session 2.</li><li><b>Recovery:</b> Pilates serves as active recovery. Post-climb static stretching for upper body. Include Shoulder Health release work.</li></ul>' },
                     { day: 'Friday', summary: ['Strength 1', 'Open Skate'], details: '<ul><li><b>Morning:</b> Optional walk. Full Body Strength A workout (lower body & ski program focus). Warm up with shoulder activation drills.</li><li><b>Evening:</b> Open Skate Session. Focus on enjoyment and practicing skills.</li><li><b>Recovery:</b> Thorough static stretch and foam roll after strength session. Light cool-down after skating.</li></ul>' },
                     { day: 'Saturday', summary: ['Adventure Day'], details: '<ul><li><b>All Day:</b> Your day for a major outdoor activity like surfing, backpacking, or a long hike.</li><li><b>Alternatively:</b> If not doing a big activity, this can be an active recovery day or a passive rest day depending on how you feel.</li><li><b>Recovery:</b> Fuel and hydrate appropriately for your activity. A comprehensive cool-down stretch is crucial after any big adventure.</li></ul>' },
                     { day: 'Sunday', summary: ['Full Rest'], details: '<ul><li><b>All Day:</b> Full passive rest. This is crucial for physical and mental recovery.</li><li><b>Activity:</b> Only a very light, optional walk.</li><li><b>Recovery:</b> Focus on sleep, nutrition, and hydration. Light, full-body mobility work if desired, including Shoulder Health stretches.</li></ul>' }
@@ -422,7 +647,7 @@
                 },
 
                 openModal(day, details) {
-                    this.modalTitle = `Plan for ${day}`;
+                    this.modalTitle = day;
                     this.modalContent = details;
                     this.modalOpen = true;
                 },
@@ -498,23 +723,6 @@
                     ]},
                 ],
 
-                init() {
-                    this.initChart();
-                    
-                    const sections = document.querySelectorAll('main section');
-                    const observer = new IntersectionObserver((entries) => {
-                        entries.forEach(entry => {
-                            if (entry.isIntersecting) {
-                                this.activeSection = entry.target.id;
-                            }
-                        });
-                    }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
-
-                    sections.forEach(section => {
-                        observer.observe(section);
-                    });
-                },
-                
                 handleScroll() {
                     // This is handled by the IntersectionObserver now
                 },
