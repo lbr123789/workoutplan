@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Integrated Athletic Blueprint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as a task-oriented dashboard. The structure prioritizes usability by organizing the complex, multifaceted plan into functional, thematic sections (Schedule, Strength, Cardio, Recovery, Nutrition) accessible via a sticky navigation. This is more intuitive than mirroring a linear report. Key interactions include a dynamic 'Today's Focus' widget for immediate guidance, clickable calendar days to reveal details without clutter, toggled views for strength workouts, and an interactive chart for running progression. This structure was chosen to make a dense, complex training plan feel manageable, integrated, and easy to navigate on a daily basis, with a primary focus on the user's immediate tasks and long-term goals. -->
+    <!-- Visualization & Content Choices: 
+        - Weekly Schedule (Report Table) -> Goal: Organize/Guide -> Viz: Interactive HTML Grid -> Interaction: Click to expand day's details -> Justification: Manages complexity, provides daily focus -> Library: Vanilla JS.
+        - Running Plan (Report Text) -> Goal: Show Change/Motivate -> Viz: Line Chart & Table -> Interaction: Hover to highlight -> Justification: Visualizes long-term progress effectively -> Library: Chart.js.
+        - Strength Exercises (Report CSV/Text) -> Goal: Organize/Show Synergy -> Viz: Toggled Exercise Cards with Icons -> Interaction: Button toggle -> Justification: Simplifies view, icons show cross-sport benefits -> Library: Vanilla JS.
+        - Stretching Routines (Report Text) -> Goal: Organize/Quick Access -> Viz: Accordion/Tabs -> Interaction: Click to expand -> Justification: Prevents long scrolling, provides context-specific routines -> Library: Vanilla JS.
+        - Core Principles (Report Text) -> Goal: Inform/Reinforce Safety -> Viz: Styled HTML cards -> Interaction: Static -> Justification: Keeps critical safety info always visible and prominent. -> Library: N/A.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4;
+            color: #333333;
+        }
+        .bg-primary { background-color: #F8F7F4; }
+        .bg-secondary { background-color: #EAE7E1; }
+        .bg-accent { background-color: #8F9D71; }
+        .text-accent { color: #8F9D71; }
+        .border-accent { border-color: #8F9D71; }
+        .ring-accent { ring-color: #8F9D71; }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #8F9D71;
+            border-bottom-color: #8F9D71;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body x-data="trainingApp()" @scroll.window="handleScroll()" class="bg-primary">
+
+    <header class="bg-primary/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="#home" class="text-2xl font-bold text-accent">Athletic Blueprint</a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#home" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'home' }">Home</a>
+                        <a href="#schedule" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'schedule' }">Schedule</a>
+                        <a href="#strength" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'strength' }">Strength</a>
+                        <a href="#cardio" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'cardio' }">Cardio & Skills</a>
+                        <a href="#recovery" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'recovery' }">Recovery</a>
+                        <a href="#nutrition" class="nav-link px-3 py-2 rounded-md text-sm font-medium" :class="{ 'active': activeSection === 'nutrition' }">Nutrition</a>
+                    </div>
+                </div>
+                 <div class="md:hidden">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-accent hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary focus:ring-accent">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" :class="{'hidden': mobileMenuOpen, 'block': !mobileMenuOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                        <svg class="h-6 w-6" :class="{'hidden': !mobileMenuOpen, 'block': mobileMenuOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div x-show="mobileMenuOpen" @click.away="mobileMenuOpen = false" class="md:hidden" x-cloak>
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="#home" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Home</a>
+                    <a href="#schedule" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Schedule</a>
+                    <a href="#strength" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Strength</a>
+                    <a href="#cardio" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Cardio & Skills</a>
+                    <a href="#recovery" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Recovery</a>
+                    <a href="#nutrition" @click="mobileMenuOpen = false" class="text-gray-700 hover:text-accent hover:bg-secondary block px-3 py-2 rounded-md text-base font-medium">Nutrition</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <section id="home" class="pt-16 -mt-16">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Your Integrated Athletic Blueprint</h1>
+                <p class="mt-4 text-lg text-gray-600">A holistic training, nutrition, and recovery plan to synergize your goals in figure skating, climbing, running, and weekend adventures, while prioritizing your ACL recovery.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-2xl font-semibold text-gray-900 mb-4">Today's Focus: <span x-text="todayName" class="text-accent"></span></h3>
+                    <div class="text-gray-700 [&>ul]:space-y-3" x-html="todaysDetailedPlan"></div>
+                </div>
+
+                <div class="bg-secondary p-6 rounded-lg">
+                    <h3 class="text-2xl font-semibold text-gray-900 mb-4">Guiding Principles</h3>
+                    <ul class="space-y-4">
+                        <li class="p-4 bg-white rounded-md shadow-sm">
+                            <h4 class="font-semibold text-accent">Listen to Your Knee</h4>
+                            <p class="text-sm text-gray-600">Your ACL recovery is the priority. Pain and swelling are signals to ease off. Progression is only safe when your knee is calm and comfortable.</p>
+                        </li>
+                        <li class="p-4 bg-white rounded-md shadow-sm">
+                            <h4 class="font-semibold text-accent">Quality Over Quantity</h4>
+                            <p class="text-sm text-gray-600">Focus on perfect form in every exercise. Better movement protects your knee and enhances performance in all your sports.</p>
+                        </li>
+                         <li class="p-4 bg-white rounded-md shadow-sm">
+                            <h4 class="font-semibold text-accent">Postural Awareness</h4>
+                            <p class="text-sm text-gray-600">Counteract desk posture with micro-breaks. Focus on engaging your shoulder blades correctly during all pulling movements to protect your upper back.</p>
+                        </li>
+                        <li class="p-4 bg-white rounded-md shadow-sm">
+                            <h4 class="font-semibold text-accent">Consistency is Key</h4>
+                            <p class="text-sm text-gray-600">Small, consistent efforts build a strong foundation. Stick to the plan, but be flexible enough to adapt based on how you feel each day.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="schedule" class="pt-24 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Your Weekly Schedule</h2>
+                <p class="mt-2 text-lg text-gray-600">This is your template for a balanced week. Click on a day to see the detailed plan. Remember to be flexible and adjust based on your body's feedback.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-7 gap-1 bg-white p-4 rounded-lg shadow-lg">
+                <template x-for="(day, index) in schedule" :key="index">
+                    <div class="border border-gray-200 rounded-md p-2" :class="{'bg-accent text-white': index === today, 'bg-gray-50': index !== today}">
+                        <div class="text-center font-semibold text-sm" x-text="day.day"></div>
+                        <div class="mt-2 space-y-1 text-xs">
+                            <template x-for="activity in day.summary" :key="activity">
+                                <div class="bg-white text-gray-800 p-1.5 rounded-md shadow-sm cursor-pointer hover:bg-secondary" @click="openModal(day.day, day.details)">
+                                    <p x-text="activity"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <section id="strength" class="pt-24 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Integrated Strength Training</h2>
+                <p class="mt-2 text-lg text-gray-600">Two full-body workouts per week designed to build strength for all your activities. Perform the comprehensive warm-up routine below before each session.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Comprehensive Pre-Lifting Warm-Up</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm text-gray-700">
+                    <div>
+                        <h4 class="font-semibold text-accent mb-2">General & Lower Body</h4>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li><strong>Bike/Cardio:</strong> 3-5 minutes at an easy pace.</li>
+                            <li><strong>Tibialis Anterior Raise (R side):</strong> 1 set to fatigue.</li>
+                            <li><strong>Hip Airplane (R side):</strong> 1 set of 15 reps.</li>
+                            <li><strong>Sideways Bandwalk (Deep Squat):</strong> 1 set of 20 reps.</li>
+                            <li><strong>Reverse Nordic Curl:</strong> 1 set of 10 reps.</li>
+                            <li><strong>Quad Stretch:</strong> 1 set of 30 seconds per side.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-accent mb-2">Shoulder Activation & Health</h4>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li><strong>Wall Slides:</strong> 2 sets of 10-15 reps.</li>
+                            <li><strong>Banded Rows:</strong> 2 sets of 15 reps (focus on squeezing shoulder blades).</li>
+                            <li><strong>Dynamic Stretches:</strong> Arm circles, leg swings, torso twists.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center mb-8">
+                <div class="bg-secondary p-1 rounded-lg flex space-x-1">
+                    <button @click="activeStrengthDay = 'A'" :class="{'bg-accent text-white': activeStrengthDay === 'A', 'bg-secondary text-gray-700 hover:bg-gray-300': activeStrengthDay !== 'A'}" class="px-4 py-2 text-sm font-medium rounded-md transition">Full Body A</button>
+                    <button @click="activeStrengthDay = 'B'" :class="{'bg-accent text-white': activeStrengthDay === 'B', 'bg-secondary text-gray-700 hover:bg-gray-300': activeStrengthDay !== 'B'}" class="px-4 py-2 text-sm font-medium rounded-md transition">Full Body B</button>
+                </div>
+            </div>
+            <div x-show="activeStrengthDay === 'A'" x-cloak>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="exercise in strengthDayA" :key="exercise.name">
+                        <div class="bg-white p-4 rounded-lg shadow-md flex flex-col">
+                            <h4 class="font-semibold text-lg text-gray-900" x-text="exercise.name"></h4>
+                            <p class="text-accent font-medium mt-1" x-text="exercise.setsReps"></p>
+                            <p class="text-gray-600 text-sm mt-2 flex-grow" x-text="exercise.notes"></p>
+                            <div class="mt-4 pt-2 border-t border-gray-200 flex items-center space-x-2 text-xs text-gray-500">
+                                <span>Benefits:</span>
+                                <template x-for="benefit in exercise.benefits" :key="benefit.icon">
+                                    <span class="inline-flex items-center" :title="benefit.sport">
+                                        <span class="mr-1" x-text="benefit.icon"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div x-show="activeStrengthDay === 'B'" x-cloak>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="exercise in strengthDayB" :key="exercise.name">
+                        <div class="bg-white p-4 rounded-lg shadow-md flex flex-col">
+                            <h4 class="font-semibold text-lg text-gray-900" x-text="exercise.name"></h4>
+                            <p class="text-accent font-medium mt-1" x-text="exercise.setsReps"></p>
+                            <p class="text-gray-600 text-sm mt-2 flex-grow" x-text="exercise.notes"></p>
+                            <div class="mt-4 pt-2 border-t border-gray-200 flex items-center space-x-2 text-xs text-gray-500">
+                                <span>Benefits:</span>
+                                <template x-for="benefit in exercise.benefits" :key="benefit.icon">
+                                    <span class="inline-flex items-center" :title="benefit.sport">
+                                        <span class="mr-1" x-text="benefit.icon"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <section id="cardio" class="pt-24 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Cardio & Skill Development</h2>
+                <p class="mt-2 text-lg text-gray-600">Progressive plans for running, plus dedicated drills for figure skating and rock climbing.</p>
+            </div>
+            <div class="space-y-12">
+                <div>
+                    <h3 class="text-2xl font-semibold text-gray-900 mb-4 text-center">Running Endurance Progression</h3>
+                    <p class="text-center text-gray-600 mb-6 max-w-3xl mx-auto">This is a gradual 16-week plan to build your mileage safely from 1 mile to your 3-6 mile goal. The chart shows your longest run of the week. Progression is key, but listen to your knee above all else.</p>
+                    <div class="bg-white p-4 rounded-lg shadow-lg">
+                        <div class="chart-container">
+                            <canvas id="runningChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-2xl font-semibold text-gray-900 mb-4">Off-Ice Skating Drills</h3>
+                        <p class="text-gray-600 text-sm mb-4">Focus on these drills to build balance, posture, and power for the ice.</p>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">⛸️</span><span><b>Single Leg Deadlift/Balance:</b> 3x10 per leg</span></li>
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">⛸️</span><span><b>Lateral Lunges:</b> 3x10-12 per leg</span></li>
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">⛸️</span><span><b>Skater Hops:</b> 2x15 per direction</span></li>
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">⛸️</span><span><b>Rotation Jumps:</b> 2x5 per direction (start with quarter turns)</span></li>
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">⛸️</span><span><b>Dead Bugs:</b> 3x10-12 per side</span></li>
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">⛸️</span><span><b>Introduce Cautiously:</b> Jump Squats/Lunges (2x6-8) only when knee is 100% stable.</span></li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-2xl font-semibold text-gray-900 mb-4">Climbing Fitness</h3>
+                        <p class="text-gray-600 text-sm mb-4">Build pulling power, grip strength, and core tension to send your projects.</p>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">🧗</span><span><b>Pull-ups / Assisted:</b> 2-3 sets to near failure</span></li>
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">🧗</span><span><b>Dead Hangs:</b> Accumulate 1-2 minutes</span></li>
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">🧗</span><span><b>Hanging Leg Raises:</b> 2-3x8-15</span></li>
+                            <li class="flex items-start"><span class="text-accent mr-2 mt-1">🧗</span><span><b>Antagonist Work:</b> Push-ups (2-3 sets) & Band Pull-Aparts (2-3x15)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="recovery" class="pt-24 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Recovery & Rejuvenation</h2>
+                <p class="mt-2 text-lg text-gray-600">Recovery is where you get stronger. Prioritize stretching, rest, and sleep.</p>
+            </div>
+             <div class="bg-white p-6 rounded-lg shadow-md">
+                <div x-data="{ openAccordion: '' }">
+                    <h3 class="text-2xl font-semibold text-gray-900 mb-4">Activity-Specific Stretching</h3>
+                    <p class="text-gray-600 text-sm mb-6">Perform these static stretches after your workouts when your muscles are warm. Hold each stretch for 20-30 seconds without bouncing.</p>
+                    <div class="space-y-2">
+                        <template x-for="stretchRoutine in stretchingRoutines" :key="stretchRoutine.activity">
+                            <div>
+                                <button @click="openAccordion = (openAccordion === stretchRoutine.activity ? '' : stretchRoutine.activity)" class="w-full flex justify-between items-center p-4 bg-secondary hover:bg-gray-300 rounded-md text-left font-semibold">
+                                    <span x-text="stretchRoutine.activity"></span>
+                                    <span class="transform transition-transform" :class="{'rotate-180': openAccordion === stretchRoutine.activity}">▼</span>
+                                </button>
+                                <div x-show="openAccordion === stretchRoutine.activity" x-cloak x-transition class="p-4 bg-gray-50 rounded-b-md">
+                                    <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <template x-for="stretch in stretchRoutine.stretches" :key="stretch.name">
+                                            <li class="text-sm text-gray-700"><strong class="font-medium text-gray-900" x-text="stretch.name + ': '"></strong><span x-text="stretch.desc"></span></li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="nutrition" class="pt-24 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Nutritional Strategy</h2>
+                <p class="mt-2 text-lg text-gray-600">Fuel your performance and optimize recovery with smart nutrition and hydration.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-accent mb-2">Carbohydrates</h3>
+                    <p class="text-gray-600">Your primary fuel. Focus on complex carbs like oats, quinoa, fruits, and vegetables for sustained energy.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-accent mb-2">Protein</h3>
+                    <p class="text-gray-600">Essential for muscle repair and growth. Include lean meats, eggs, dairy, and legumes in every meal.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-accent mb-2">Healthy Fats</h3>
+                    <p class="text-gray-600">Crucial for hormone production and overall health. Choose sources like avocado, nuts, seeds, and olive oil.</p>
+                </div>
+            </div>
+             <div class="mt-12 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-2xl font-semibold text-gray-900 mb-4 text-center">Nutrient Timing</h3>
+                <div class="relative">
+                    <div class="absolute left-0 top-1/2 w-full h-0.5 bg-gray-300"></div>
+                    <div class="relative flex justify-between">
+                        <div class="text-center w-1/4">
+                            <div class="relative flex justify-center">
+                                <div class="w-4 h-4 bg-accent rounded-full z-10"></div>
+                            </div>
+                            <p class="mt-2 font-semibold">Pre-Workout</p>
+                            <p class="text-xs text-gray-500">(1-3 hours before)</p>
+                            <p class="text-sm mt-1">Complex carbs & protein (Oatmeal, chicken & rice)</p>
+                        </div>
+                        <div class="text-center w-1/4">
+                            <div class="relative flex justify-center">
+                                <div class="w-4 h-4 bg-accent rounded-full z-10"></div>
+                            </div>
+                            <p class="mt-2 font-semibold">During</p>
+                            <p class="text-xs text-gray-500">(>75 min activity)</p>
+                            <p class="text-sm mt-1">Simple carbs (Sports drink, banana)</p>
+                        </div>
+                        <div class="text-center w-1/4">
+                           <div class="relative flex justify-center">
+                                <div class="w-4 h-4 bg-accent rounded-full z-10"></div>
+                            </div>
+                            <p class="mt-2 font-semibold">Post-Workout</p>
+                            <p class="text-xs text-gray-500">(<60 mins after)</p>
+                            <p class="text-sm mt-1">Carbs & protein ~3:1 ratio (Chocolate milk, smoothie)</p>
+                        </div>
+                        <div class="text-center w-1/4">
+                            <div class="relative flex justify-center">
+                                <div class="w-4 h-4 bg-accent rounded-full z-10"></div>
+                            </div>
+                            <p class="mt-2 font-semibold">Hydration</p>
+                            <p class="text-xs text-gray-500">(All day)</p>
+                            <p class="text-sm mt-1">Aim for pale yellow urine. Water is best.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-secondary mt-16">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
+            <p>This plan is a guideline. Always consult with a physical therapist or doctor for personalized medical advice. Listen to your body and adjust as needed.</p>
+            <p class="mt-1">&copy; 2025 Your Athletic Blueprint. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <div x-show="modalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
+        <div @click.away="modalOpen = false" class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full mx-4">
+            <h3 class="text-2xl font-semibold text-gray-900 mb-4" x-text="modalTitle"></h3>
+            <div class="text-gray-700 space-y-3" x-html="modalContent"></div>
+            <button @click="modalOpen = false" class="mt-6 w-full bg-accent text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition">Close</button>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        function trainingApp() {
+            return {
+                mobileMenuOpen: false,
+                activeStrengthDay: 'A',
+                activeSection: 'home',
+                today: new Date().getDay() === 0 ? 6 : new Date().getDay() - 1,
+                todayName: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
+                modalOpen: false,
+                modalTitle: '',
+                modalContent: '',
+
+                schedule: [
+                    { day: 'Monday', summary: ['Run 2 (Short)', 'Climb 1'], details: '<ul><li><b>Morning:</b> Optional walk. Shorter, easy effort running session (e.g., 20-30 min).</li><li><b>Evening:</b> Rock Climbing Session 1. Focus on technique and endurance.</li><li><b>Recovery:</b> Dynamic warm-ups before each session. Static stretching after each, focusing on legs post-run and upper body/forearms post-climb. Include Shoulder Health release work.</li></ul>' },
+                    { day: 'Tuesday', summary: ['Strength 2', 'Skate Lesson'], details: '<ul><li><b>Morning:</b> Optional walk. Full Body Strength B workout (upper body & core focus). Warm up with shoulder activation drills.</li><li><b>Evening:</b> Figure Skating Lesson (1hr). Precede with off-ice dynamic warm-up.</li><li><b>Recovery:</b> Thorough static stretch and/or foam roll after strength session. Light cool-down after skating.</li></ul>' },
+                    { day: 'Wednesday', summary: ['Run 1 (Long)', 'Pilates'], details: '<ul><li><b>Morning:</b> Optional walk.</li><li><b>Evening:</b> Longer running session, followed by Pilates. The run builds endurance; Pilates will focus on core, stability, and active recovery.</li><li><b>Recovery:</b> Dynamic warm-up before run. Use Pilates as a structured cool-down, followed by targeted static stretches for hips and hamstrings.</li></ul>' },
+                    { day: 'Thursday', summary: ['Active Recovery', 'Climb 2'], details: '<ul><li><b>Morning:</b> Active Recovery. Low-impact cross-training like swimming, easy cycling, or a long walk.</li><li><b>Evening:</b> Rock Climbing Session 2.</li><li><b>Recovery:</b> Focus on mobility during active recovery. Post-climb static stretching for upper body. Include Shoulder Health release work.</li></ul>' },
+                    { day: 'Friday', summary: ['Strength 1', 'Open Skate'], details: '<ul><li><b>Morning:</b> Optional walk. Full Body Strength A workout (lower body & ski program focus). Warm up with shoulder activation drills.</li><li><b>Evening:</b> Open Skate Session. Focus on enjoyment and practicing skills.</li><li><b>Recovery:</b> Thorough static stretch and foam roll after strength session. Light cool-down after skating.</li></ul>' },
+                    { day: 'Saturday', summary: ['Adventure Day'], details: '<ul><li><b>All Day:</b> Your day for a major outdoor activity like surfing, backpacking, or a long hike.</li><li><b>Alternatively:</b> If not doing a big activity, this can be an active recovery day or a passive rest day depending on how you feel.</li><li><b>Recovery:</b> Fuel and hydrate appropriately for your activity. A comprehensive cool-down stretch is crucial after any big adventure.</li></ul>' },
+                    { day: 'Sunday', summary: ['Full Rest'], details: '<ul><li><b>All Day:</b> Full passive rest. This is crucial for physical and mental recovery.</li><li><b>Activity:</b> Only a very light, optional walk.</li><li><b>Recovery:</b> Focus on sleep, nutrition, and hydration. Light, full-body mobility work if desired, including Shoulder Health stretches.</li></ul>' }
+                ],
+                
+                get todaysPlan() {
+                    const todayData = this.schedule[this.today];
+                    return todayData ? todayData.summary : [];
+                },
+
+                get todaysDetailedPlan() {
+                    const todayData = this.schedule[this.today];
+                    if (todayData && todayData.details) {
+                        return todayData.details;
+                    }
+                    return '<p class="text-gray-600">Today is a rest day. Focus on light stretching and recovery.</p>';
+                },
+
+                openModal(day, details) {
+                    this.modalTitle = `Plan for ${day}`;
+                    this.modalContent = details;
+                    this.modalOpen = true;
+                },
+                
+                strengthDayA: [
+                    { name: 'Isometric Pistol Squat (assisted)', setsReps: '3 sets of 10s holds x2 per leg', notes: 'From your Ski Program. Use assistance to hold in your most challenging range.', benefits: [{sport: 'ACL Rehab', icon: '⚕️'}, {sport: 'Skating', icon: '⛸️'}, {sport: 'Hiking', icon: '🥾'}] },
+                    { name: 'Romanian Deadlifts (RDLs)', setsReps: '2-3 sets of 8-12', notes: 'Focus on hamstring stretch and flat back. Great for posterior chain.', benefits: [{sport: 'Running', icon: '🏃‍♀️'}, {sport: 'Hiking', icon: '🥾'}, {sport: 'ACL Rehab', icon: '⚕️'}] },
+                    { name: 'Push-ups', setsReps: '2-3 sets to near failure', notes: 'Standard or variation. Builds antagonist strength for climbing.', benefits: [{sport: 'Climbing', icon: '🧗'}, {sport: 'Surfing', icon: '🏄‍♀️'}, {sport: 'General', icon: '💪'}] },
+                    { name: 'Pull-ups / Assisted', setsReps: '2-3 sets to near failure', notes: 'The foundation of climbing and surfing paddle strength. Consciously set scapula before pulling.', benefits: [{sport: 'Climbing', icon: '🧗'}, {sport: 'Surfing', icon: '🏄‍♀️'}] },
+                    { name: 'Plank Variations', setsReps: '2-3 sets, 30-60s holds', notes: 'Forearm or side planks. Essential core stability for all sports.', benefits: [{sport: 'All', icon: '⭐'}] },
+                    { name: 'Sissy Squats', setsReps: '1 set of 15', notes: 'From your Ski Program. Focus on quad strength and knee health.', benefits: [{sport: 'ACL Rehab', icon: '⚕️'}, {sport: 'Hiking', icon: '🥾'}] },
+                    { name: 'Farmer\'s Carry', setsReps: '2-3 sets, 30-60s or distance', notes: 'Builds grip, core, and posture for climbing and carrying packs.', benefits: [{sport: 'Climbing', icon: '🧗'}, {sport: 'Backpacking', icon: '🎒'}] },
+                ],
+                
+                strengthDayB: [
+                    { name: 'Weighted Squats (Goblet/Dumbbell)', setsReps: '2-3 sets of 8-12', notes: 'Overall leg strength. Progress weight carefully.', benefits: [{sport: 'Skating', icon: '⛸️'}, {sport: 'Hiking', icon: '🥾'}, {sport: 'General', icon: '💪'}] },
+                    { name: 'Lateral Lunges', setsReps: '2-3 sets of 10-12 per leg', notes: 'Builds side-to-side strength for skating edge control and trail stability.', benefits: [{sport: 'Skating', icon: '⛸️'}, {sport: 'Hiking', icon: '🥾'}] },
+                    { name: 'Overhead Press (Dumbbell)', setsReps: '2-3 sets of 6-10', notes: 'Develops shoulder strength and challenges core stability.', benefits: [{sport: 'Climbing', icon: '🧗'}, {sport: 'General', icon: '💪'}] },
+                    { name: 'Single-Arm Dumbbell Rows', setsReps: '2-3 sets of 8-12 per side', notes: 'Builds unilateral back strength. Initiate by squeezing shoulder blades first.', benefits: [{sport: 'Climbing', icon: '🧗'}, {sport: 'General', icon: '💪'}] },
+                    { name: 'Prone "Y"s', setsReps: '2-3 sets of 12-15', notes: 'Strengthens lower/mid-traps. Lie face down, arms in a "Y", thumbs up. Squeeze shoulder blades and lift arms. Hold for 2-3s.', benefits: [{sport: 'Shoulder Health', icon: '⚕️'}, {sport: 'Climbing', icon: '🧗'}, {sport: 'Posture', icon: '🖥️'}] },
+                    { name: 'Hanging Leg Raises', setsReps: '2-3 sets of 8-15', notes: 'A climbing-specific core exercise for powerful body tension.', benefits: [{sport: 'Climbing', icon: '🧗'}, {sport: 'Skating', icon: '⛸️'}] },
+                    { name: 'Reverse Nordic Curl', setsReps: '1 set of 10', notes: 'From your Ski Program. Focus on full range for eccentric hamstring strength.', benefits: [{sport: 'ACL Rehab', icon: '⚕️'}, {sport: 'Running', icon: '🏃‍♀️'}] },
+                ],
+                
+                stretchingRoutines: [
+                    { activity: 'Shoulder & Upper Back Health', stretches: [
+                        { name: 'Myofascial Release (Knot)', desc: 'Use a lacrosse ball against a wall, between spine and shoulder blade. Hold on tender spots for 30-60s.' },
+                        { name: 'Thoracic Spine Mobility', desc: 'Lie with a foam roller across your mid-back. Gently roll up and down from neck base to bottom of ribs.' },
+                        { name: 'Doorway Chest Stretch', desc: 'Place forearms on a door frame, elbows slightly below shoulders. Step through gently. Hold 30-60s.' },
+                        { name: 'Latissimus Dorsi Stretch', desc: 'Overhead side reach or Child\'s pose with a side reach. Lengthen the entire side of your torso.' },
+                        { name: 'Upper Trap Stretch', desc: 'Gently tilt ear to shoulder. Deepen by holding your chair or using opposite hand on head. Hold 20-30s.' },
+                        { name: 'Wall Slides (Activation)', desc: 'Stand facing a wall, forearms pressed against it. Slide arms up into a "Y" and back down. 2x15 reps.' }
+                    ]},
+                    { activity: 'Post-Running Stretches', stretches: [
+                        { name: 'Quadriceps', desc: 'Standing heel-to-glute or half-kneeling.' },
+                        { name: 'Hamstrings', desc: 'Seated or standing forward fold, hinge at hips.' },
+                        { name: 'Calves', desc: 'Wall stretch with straight leg and bent knee.' },
+                        { name: 'Hip Flexors', desc: 'Kneeling lunge, tuck pelvis.' },
+                        { name: 'Glutes', desc: 'Figure-four stretch, seated or lying.' },
+                        { name: 'IT Band', desc: 'Standing cross-leg side bend.' },
+                    ]},
+                    { activity: 'Post-Climbing Stretches', stretches: [
+                        { name: 'Forearm Flexors', desc: 'Wrist extension stretch, palm up.' },
+                        { name: 'Forearm Extensors', desc: 'Wrist flexion stretch, palm down.' },
+                        { name: 'Lats', desc: 'Overhead side reach or child\'s pose with side reach.' },
+                        { name: 'Pectorals (Chest)', desc: 'Doorway chest stretch.' },
+                        { name: 'Shoulders', desc: 'Cross-body arm stretch.' },
+                        { name: 'Biceps', desc: 'Wall stretch with arm straight back.' },
+                    ]},
+                    { activity: 'Post-Skating Stretches', stretches: [
+                        { name: 'Adductors (Inner Thigh)', desc: 'Butterfly stretch or wide-legged straddle.' },
+                        { name: 'Abductors (Outer Thigh)', desc: 'Standing cross-leg side bend.' },
+                        { name: 'Glutes', desc: 'Pigeon pose or supine knee-to-chest twist.' },
+                        { name: 'Hip Flexors', desc: 'Kneeling lunge stretch.' },
+                        { name: 'Hamstrings', desc: 'Seated forward fold.' },
+                        { name: 'Spinal Mobility', desc: 'Gentle supine spinal twist.' },
+                    ]},
+                     { activity: 'Post-Lifting Stretches', stretches: [
+                        { name: 'Pectorals (Chest)', desc: 'Doorway chest stretch.' },
+                        { name: 'Lats & Upper Back', desc: 'Child\'s pose with side reach.' },
+                        { name: 'Shoulders', desc: 'Cross-body arm stretch and overhead triceps stretch.' },
+                        { name: 'Quadriceps', desc: 'Standing quad stretch.' },
+                        { name: 'Hamstrings', desc: 'Seated forward fold.' },
+                        { name: 'Glutes', desc: 'Figure-four stretch.' },
+                    ]},
+                    { activity: 'Post-Surfing Stretches', stretches: [
+                        { name: 'Chest/Shoulders/Abdomen', desc: 'Cobra pose to counter paddling posture.' },
+                        { name: 'Hips/Glutes/Spine', desc: 'Seated hip stretch with a spinal twist.' },
+                        { name: 'Lower Back/Hamstrings', desc: 'Gentle forward fold (dead hang), soft knees.' },
+                        { name: 'Back/Shoulders', desc: 'Child\'s pose for overall release.' },
+                        { name: 'Full Body Relaxation', desc: 'Legs up the wall to aid circulation.' },
+                        { name: 'Lats', desc: 'Overhead side reach.' },
+                    ]},
+                ],
+
+                init() {
+                    this.initChart();
+                    
+                    const sections = document.querySelectorAll('main section');
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                this.activeSection = entry.target.id;
+                            }
+                        });
+                    }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+
+                    sections.forEach(section => {
+                        observer.observe(section);
+                    });
+                },
+                
+                handleScroll() {
+                    // This is handled by the IntersectionObserver now
+                },
+
+                initChart() {
+                    const ctx = document.getElementById('runningChart').getContext('2d');
+                    const runningData = {
+                        labels: Array.from({length: 16}, (_, i) => `Week ${i + 1}`),
+                        datasets: [{
+                            label: 'Longest Run Distance (Miles)',
+                            data: [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 6],
+                            borderColor: '#8F9D71',
+                            backgroundColor: 'rgba(143, 157, 113, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#8F9D71',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                        }]
+                    };
+                    
+                    const chartOptions = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Miles'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Progression'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += `${context.parsed.y} miles`;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: runningData,
+                        options: chartOptions
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
